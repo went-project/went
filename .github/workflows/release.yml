@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v1.*.*'
+      - 'v2.*.*'
 
 permissions:
   contents: write
@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           month_year="$(date +%m%y)"
-          latest_tag="$(git tag -l "v1.${month_year}.*" | sort -V | tail -n 1)"
+          latest_tag="$(git tag -l "v2.${month_year}.*" | sort -V | tail -n 1)"
           if [ -n "$latest_tag" ]; then
             latest_number="${latest_tag##*.}"
           else
@@ -42,7 +42,7 @@ jobs:
           fi
 
           next_number=$((latest_number + 1))
-          version_tag="v1.${month_year}.${next_number}"
+          version_tag="v2.${month_year}.${next_number}"
           echo "version_tag=$version_tag" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
@@ -70,27 +70,27 @@ jobs:
             runs_on: windows-latest
             goos: windows
             goarch: amd64
-            artifact_prefix: went2-windows-amd64
+            artifact_prefix: went-windows-amd64
           - name: linux
             runs_on: ubuntu-latest
             goos: linux
             goarch: amd64
-            artifact_prefix: went2-linux-amd64
+            artifact_prefix: went-linux-amd64
           - name: linux-arm64
             runs_on: ubuntu-latest
             goos: linux
             goarch: arm64
-            artifact_prefix: went2-linux-arm64
+            artifact_prefix: went-linux-arm64
           - name: macos
             runs_on: macos-latest
             goos: darwin
             goarch: amd64
-            artifact_prefix: went2-darwin-amd64
+            artifact_prefix: went-darwin-amd64
           - name: macos-arm64
             runs_on: macos-latest
             goos: darwin
             goarch: arm64
-            artifact_prefix: went2-darwin-arm64
+            artifact_prefix: went-darwin-arm64
 
     steps:
       - name: Checkout repository

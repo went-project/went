@@ -5,7 +5,7 @@ set -eu
 repo="${WENT_REPOSITORY:-went-project/went}"
 version_input="${WENT_VERSION:-${1:-}}"
 install_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
-binary_name="went2"
+binary_name="went"
 temp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t went-install)"
 
 log() {
@@ -96,7 +96,7 @@ case "$version_tag" in
     ;;
 esac
 
-asset_name="went2-${os_name}-${arch_name}-v.${version_tag}"
+asset_name="went-${os_name}-${arch_name}-v.${version_tag}"
 if [ "$os_name" = "windows" ]; then
   asset_name="${asset_name}.exe"
 fi

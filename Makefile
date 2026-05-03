@@ -1,6 +1,6 @@
 .PHONY: all install clean
 
-BINARY_NAME=went2
+BINARY_NAME=went
 BUILD_DIR=./build
 INSTALL_DIR=/usr/local/bin
 SOURCE_FILES=$(shell find . -name "*.go" -type f)

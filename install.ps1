@@ -5,7 +5,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = if ($env:WENT_REPOSITORY) { $env:WENT_REPOSITORY } else { 'went-project/went' }
 $binDir = Join-Path $env:LOCALAPPDATA 'went\bin'
-$binaryName = 'went2.exe'
+$binaryName = 'went.exe'
 
 function Write-Info {
     param([string]$Message)
@@ -71,7 +71,7 @@ if ($versionTag.StartsWith('v')) {
     $versionTag = $versionTag.Substring(1)
 }
 
-$assetName = "went2-windows-$archName-v.$versionTag.exe"
+$assetName = "went-windows-$archName-v.$versionTag.exe"
 
 $downloadUrl = "https://github.com/$repo/releases/download/v$versionTag/$assetName"
 
@@ -92,4 +92,4 @@ $newUserPath = ($parts + $binDir) -join ';'
 $env:Path = "$binDir;$env:Path"
 
 Write-Host "Kurulum başarılı! Aramıza hoşgeldin! Hemen başlamak için terminali yeniden açabilir veya şu komutu çalıştırabilirsin:"
-Write-Host "  went2 --help"
+Write-Host "  went --help"

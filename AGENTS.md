@@ -18,7 +18,7 @@ This file documents how coding agents should work in this repository.
 
 ## CLI Conventions
 
-- Main binary name from `Makefile`: `went2`
+- Main binary name from `Makefile`: `went`
 - Root commands:
   - `create [name]`
   - `version`

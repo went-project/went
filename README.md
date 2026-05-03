@@ -38,54 +38,54 @@ WENT, Go ve Cobra ile yazilmis bir proje scaffold aracidir. Yeni bir backend pro
 # Projeyi derle
 make build
 
-# Binary kur (varsayilan: /usr/local/bin/went2)
+# Binary kur (varsayilan: /usr/local/bin/went)
 make install
 ```
 
 Alternatif:
 
 ```bash
-go build -o build/went2 .
+go build -o build/went .
 ```
 
 ## Komutlar
 
 ```bash
 # Yardim
-./build/went2 --help
+./build/went --help
 
 # Versiyon
-./build/went2 version
+./build/went version
 
 # Yeni proje olustur
-./build/went2 create my-app
+./build/went create my-app
 
 # Generator komutlari (proje dizini icerisinde calistirilmali)
-./build/went2 gen:model User             # skeleton related set
-./build/went2 gen:model User -a          # full related set
-./build/went2 gen:controller User        # skeleton related set
-./build/went2 gen:controller User -a     # full related set
-./build/went2 gen:router User            # skeleton related set
-./build/went2 gen:router User -a         # full related set
-./build/went2 gen:resource User          # skeleton related set
-./build/went2 gen:resource User -a       # full related set
-./build/went2 gen:migration User         # skeleton related set
-./build/went2 gen:migration User -a      # full related set
+./build/went gen:model User             # skeleton related set
+./build/went gen:model User -a          # full related set
+./build/went gen:controller User        # skeleton related set
+./build/went gen:controller User -a     # full related set
+./build/went gen:router User            # skeleton related set
+./build/went gen:router User -a         # full related set
+./build/went gen:resource User          # skeleton related set
+./build/went gen:resource User -a       # full related set
+./build/went gen:migration User         # skeleton related set
+./build/went gen:migration User -a      # full related set
 
 # Migration runner komutlari (proje dizini icerisinde calistirilmali)
-./build/went2 migrate                     # bekleyen tum up dosyalarini siraya gore uygular
-./build/went2 migrate:rollback            # son 1 migration'i geri alir
-./build/went2 migrate:rollback --step 3   # son 3 migration'i geri alir
-./build/went2 migrate:fresh               # tum down'lari calistirip sifirdan up uygular
+./build/went migrate                     # bekleyen tum up dosyalarini siraya gore uygular
+./build/went migrate:rollback            # son 1 migration'i geri alir
+./build/went migrate:rollback --step 3   # son 3 migration'i geri alir
+./build/went migrate:fresh               # tum down'lari calistirip sifirdan up uygular
 ```
 
 ## Release Pipeline
 
 GitHub Actions release workflow'u `.github/workflows/release.yml` icerisinde tanimlidir. `main` branch'ine push geldiginde pipeline otomatik olarak yeni bir `v1.0526.<number>` tag'i uretir ve ayni workflow calismasi icinde build + GitHub Release yayinlar. Tag push edildiginde de ayni release akisi calisir:
 
-- Windows: `went2-windows-amd64-v.1.0526.1.exe`
-- Linux: `went2-linux-amd64-v.1.0526.1`, `went2-linux-arm64-v.1.0526.1`
-- macOS: `went2-darwin-amd64-v.1.0526.1`, `went2-darwin-arm64-v.1.0526.1`
+- Windows: `went-windows-amd64-v.1.0526.1.exe`
+- Linux: `went-linux-amd64-v.1.0526.1`, `went-linux-arm64-v.1.0526.1`
+- macOS: `went-darwin-amd64-v.1.0526.1`, `went-darwin-arm64-v.1.0526.1`
 
 Ornek tag:
 
@@ -115,7 +115,7 @@ Invoke-WebRequest https://raw.githubusercontent.com/went-project/went/main/insta
 
 Varsayilan olarak en son release indirilir. Belirli bir tag kurmak istersen `WENT_VERSION=v1.0526.1 ./install.sh` ya da PowerShell tarafinda `$env:WENT_VERSION='v1.0526.1'; ./install.ps1` kullanabilirsin.
 
-Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `went2 --help` ile dogrulayabilirsin.
+Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `went --help` ile dogrulayabilirsin.
 
 > **On Kosul:** `create` disindaki tum komutlar calisma dizininde `wentconfig.json` dosyasi bekler. Dosya yoksa komut isleme devam etmez.
 
