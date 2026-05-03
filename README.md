@@ -79,6 +79,42 @@ go build -o build/went2 .
 ./build/went2 migrate:fresh               # tum down'lari calistirip sifirdan up uygular
 ```
 
+## Release Pipeline
+
+GitHub Actions release workflow'u `.github/workflows/release.yml` icerisinde tanimlidir. Tag push edildiginde calisir ve `v1.0526.<number>` formatindaki tag'ler icin su buildleri olusturur:
+
+- Windows: `went2-windows-amd64-v.1.0526.1.exe`
+- Linux: `went2-linux-amd64-v.1.0526.1`, `went2-linux-arm64-v.1.0526.1`
+- macOS: `went2-darwin-amd64-v.1.0526.1`, `went2-darwin-arm64-v.1.0526.1`
+
+Ornek tag:
+
+```bash
+git tag v1.0526.1
+git push origin v1.0526.1
+```
+
+## Kurulum
+
+Release'ten indirmek icin kendi platformuna uygun scripti calistir:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/went-project/went/main/install.sh -o install.sh
+chmod +x install.sh
+./install.sh
+```
+
+Windows icin:
+
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/went-project/went/main/install.ps1 -OutFile install.ps1
+./install.ps1
+```
+
+Varsayilan olarak en son release indirilir. Belirli bir tag kurmak istersen `WENT_VERSION=v1.0526.1 ./install.sh` ya da PowerShell tarafinda `$env:WENT_VERSION='v1.0526.1'; ./install.ps1` kullanabilirsin.
+
+Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `went2 --help` ile dogrulayabilirsin.
+
 > **On Kosul:** `create` disindaki tum komutlar calisma dizininde `wentconfig.json` dosyasi bekler. Dosya yoksa komut isleme devam etmez.
 
 ### migrate:rollback Flag'leri
