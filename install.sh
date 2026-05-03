@@ -40,7 +40,7 @@ fetch_latest_tag() {
 
   download_file "$api_url" "$response_file"
 
-  latest_tag="$(grep -o '"tag_name":"[^"]*"' "$response_file" | head -n 1 | sed 's/"tag_name":"//; s/"$//')"
+  latest_tag="$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$response_file" | head -n 1)"
   [ -n "$latest_tag" ] || fail "unable to determine the latest release tag"
   printf '%s' "$latest_tag"
 }
