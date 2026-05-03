@@ -1,0 +1,29 @@
+package project
+
+func DevwatchignoreTemplate() string {
+	return `# Ignore generated files and directories
+build/
+dist/
+vendor/
+
+# Ignore database files
+*.sqlite
+*.db
+*.sqlite-journal
+
+# Ignore migration SQL files
+database/migrations/
+
+# Ignore static assets
+*.html
+*.css
+*.js
+*.json
+
+# Ignore test files
+*_test.go
+
+# Ignore hidden/system files
+.DS_Store
+`
+}

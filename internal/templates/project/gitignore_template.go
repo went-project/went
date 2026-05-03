@@ -1,0 +1,40 @@
+package project
+
+func GitignoreTemplate() string {
+	return `# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+*.test
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+
+# Go workspace
+go.work
+go.work.sum
+
+# Vendor
+# vendor/
+
+# Env files
+.env
+.env.local
+.env.development
+.env.test
+
+# Editor/IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Build output
+build/
+dist/
+`
+}
