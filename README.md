@@ -81,7 +81,7 @@ go build -o build/went2 .
 
 ## Release Pipeline
 
-GitHub Actions release workflow'u `.github/workflows/release.yml` icerisinde tanimlidir. Tag push edildiginde calisir ve `v1.0526.<number>` formatindaki tag'ler icin su buildleri olusturur:
+GitHub Actions release workflow'u `.github/workflows/release.yml` icerisinde tanimlidir. `main` branch'ine push geldiginde pipeline otomatik olarak yeni bir `v1.0526.<number>` tag'i uretir ve onu repoya push eder. Tag push edildiginde ise release buildleri calisir:
 
 - Windows: `went2-windows-amd64-v.1.0526.1.exe`
 - Linux: `went2-linux-amd64-v.1.0526.1`, `went2-linux-arm64-v.1.0526.1`
@@ -93,6 +93,8 @@ Ornek tag:
 git tag v1.0526.1
 git push origin v1.0526.1
 ```
+
+`main` push akisi, mevcut ay-yil prefiksine gore bir sonraki numarayi hesaplar ve `v1.0526.<number>` formatinda tag olusturur. Tag push oldugunda ayni workflow release artifact'larini uretir ve GitHub Release olarak yayinlar.
 
 ## Kurulum
 
