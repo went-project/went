@@ -22,6 +22,7 @@ This file documents how coding agents should work in this repository.
 - Root commands:
   - `create [name]`
   - `version`
+  - `run`
   - `gen:router [name]`
   - `gen:model [name]`
   - `gen:controller [name]`

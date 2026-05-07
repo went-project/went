@@ -7,6 +7,7 @@ WENT, Go ve Cobra ile yazilmis bir proje scaffold aracidir. Yeni bir backend pro
 ## Ozellikler
 
 - Yeni proje olusturma (`create [name]`)
+- Hot reload ile calisan uygulamayi baslatma (`run`)
 - Hazir uygulama iskeleti (Chi router, GORM, graceful shutdown)
 - Swagger dokumantasyonu otomatik olarak olusturulur (`swag init` create sirasinda calisir)
 - Controller metodlarinda Swagger annotation desteği (Payload/Response DTO tipleri)
@@ -61,6 +62,7 @@ go build -o build/went .
 ./build/went create my-app
 
 # Generator komutlari (proje dizini icerisinde calistirilmali)
+./build/went run                        # Run project with hot reload
 ./build/went gen:model User             # skeleton related set
 ./build/went gen:model User -a          # full related set
 ./build/went gen:controller User        # skeleton related set
@@ -158,6 +160,7 @@ Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `w
 - `database/migrations/000001_create_users_table.up.sql`
 - `database/migrations/000001_create_users_table.down.sql`
 - `.env.example`, `.gitignore`, `.devwatchignore`
+- Run watcher reads `.wentignore` first and falls back to `.devwatchignore`
 - `docs/` — `swag init` ile otomatik olusturulur
 
 Create sirasinda su komutlar otomatik calisir:

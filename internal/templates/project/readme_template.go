@@ -9,7 +9,7 @@ A REST API project scaffolded with [went](https://github.com/ekinatam/went).
 
 > **For AI Agents:** See [CLAUDE.md](./CLAUDE.md) for agent guidelines, which points to [AGENTS.md](./AGENTS.md) for detailed conventions.
 
-- [went2](https://github.com/ekinatam/went) CLI (optional, for code generation)
+- [went](https://github.com/ekinatam/went) CLI (optional, for code generation)
 
 ## Getting Started
 
@@ -21,10 +21,10 @@ cp .env.example .env
 go mod tidy
 
 # 3. Run migrations
-went2 migrate
+went migrate
 
 # 4. Start the server
-go run main.go
+went run
 %[2]s%[2]s%[2]s
 
 The API will be available at %[2]shttp://localhost:8080%[2]s.
@@ -34,7 +34,7 @@ Swagger UI is served at %[2]shttp://localhost:8080/swagger/index.html%[2]s.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| %[2]sAPP_PORT%[2]s | %[2]s8080%[2]s | HTTP server port |
+| %[2]sPORT%[2]s | %[2]s8080%[2]s | HTTP server port |
 | %[2]sDB_CONNECTION%[2]s | %[2]ssqlite%[2]s | Database driver (%[2]ssqlite%[2]s / %[2]smysql%[2]s / %[2]spostgres%[2]s) |
 | %[2]sDB_HOST%[2]s | %[2]s127.0.0.1%[2]s | Database host |
 | %[2]sDB_PORT%[2]s | %[2]s3306%[2]s | Database port |
@@ -48,20 +48,20 @@ If no env file is present, default DB settings fall back to SQLite.
 
 ## Code Generation
 
-Use the %[2]swent2%[2]s CLI to scaffold new resources:
+Use the %[2]swent%[2]s CLI to scaffold new resources:
 
 %[2]s%[2]s%[2]sbash
-went2 gen:model <Name>              # Skeleton related set
-went2 gen:model <Name> -m           # Compatibility flag (skeleton related set already includes migration)
-went2 gen:model <Name> -a           # Full related set
-went2 gen:controller <Name>         # Skeleton related set
-went2 gen:controller <Name> -a      # Full related set
-went2 gen:router <Name>             # Skeleton related set
-went2 gen:router <Name> -a          # Full related set
-went2 gen:resource <Name>           # Skeleton related set
-went2 gen:resource <Name> -a        # Full related set
-went2 gen:migration <Name>          # Skeleton related set
-went2 gen:migration <Name> -a       # Full related set
+went gen:model <Name>              # Skeleton related set
+went gen:model <Name> -m           # Compatibility flag (skeleton related set already includes migration)
+went gen:model <Name> -a           # Full related set
+went gen:controller <Name>         # Skeleton related set
+went gen:controller <Name> -a      # Full related set
+went gen:router <Name>             # Skeleton related set
+went gen:router <Name> -a          # Full related set
+went gen:resource <Name>           # Skeleton related set
+went gen:resource <Name> -a        # Full related set
+went gen:migration <Name>          # Skeleton related set
+went gen:migration <Name> -a       # Full related set
 %[2]s%[2]s%[2]s
 
 Default mode generates skeleton files so you can fill your domain details manually.
@@ -75,10 +75,10 @@ Generated router files follow %[2]sroutes/<name>_router.go%[2]s naming in lowerc
 ## Migrations
 
 %[2]s%[2]s%[2]sbash
-went2 migrate                       # Run all pending migrations
-went2 migrate:rollback              # Roll back the last migration
-went2 migrate:rollback --step 3     # Roll back the last 3 migrations
-went2 migrate:fresh                 # Drop everything and re-run all migrations
+went migrate                       # Run all pending migrations
+went migrate:rollback              # Roll back the last migration
+went migrate:rollback --step 3     # Roll back the last 3 migrations
+went migrate:fresh                 # Drop everything and re-run all migrations
 %[2]s%[2]s%[2]s
 
 ## Project Structure

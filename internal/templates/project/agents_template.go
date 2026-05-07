@@ -62,20 +62,21 @@ If no env file is found, configuration defaults still fall back to SQLite.
 | Command | Description |
 |---------|-------------|
 | %[2]sgo run main.go%[2]s | Start the development server |
+| %[2]swent run%[2]s | Start the project with hot reload |
 | %[2]sswag init%[2]s | Regenerate Swagger docs |
-| %[2]swent2 gen:model <Name>%[2]s | Scaffold a new model |
-| %[2]swent2 gen:resource <Name>%[2]s | Scaffold a new resource |
-| %[2]swent2 gen:controller <Name>%[2]s | Scaffold a new controller |
-| %[2]swent2 gen:router <Name>%[2]s | Scaffold a new router |
-| %[2]swent2 gen:migration <Name>%[2]s | Scaffold a new migration |
-| %[2]swent2 migrate%[2]s | Run pending migrations |
-| %[2]swent2 migrate:rollback%[2]s | Roll back the last migration |
-| %[2]swent2 migrate:fresh%[2]s | Drop all tables and re-run migrations |
+| %[2]swent gen:model <Name>%[2]s | Scaffold a new model |
+| %[2]swent gen:resource <Name>%[2]s | Scaffold a new resource |
+| %[2]swent gen:controller <Name>%[2]s | Scaffold a new controller |
+| %[2]swent gen:router <Name>%[2]s | Scaffold a new router |
+| %[2]swent gen:migration <Name>%[2]s | Scaffold a new migration |
+| %[2]swent migrate%[2]s | Run pending migrations |
+| %[2]swent migrate:rollback%[2]s | Roll back the last migration |
+| %[2]swent migrate:fresh%[2]s | Drop all tables and re-run migrations |
 
 ## Editing Guidance
 
 - Register new routes in the corresponding %[2]sroutes/*_router.go%[2]s file and mount the group in %[2]sroutes/main_router.go%[2]s.
-- After adding or changing model structs, create a new migration pair and run %[2]swent2 migrate%[2]s.
+- After adding or changing model structs, create a new migration pair and run %[2]swent migrate%[2]s.
 - Keep read/query logic in %[2]shttp/resources/*_resource.go%[2]s via %[2]sXQuery%[2]s methods; keep controllers thin.
 - Use %[2]sPaginate(page, perPage)%[2]s in resources for Laravel-style %[2]s{data, meta}%[2]s responses.
 - Use %[2]sinternal/responses%[2]s helpers in controllers for error output (%[2]sJSONError%[2]s / %[2]sJSONErrorWithDetails%[2]s).
