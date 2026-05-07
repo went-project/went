@@ -18,6 +18,9 @@ var Create = &cobra.Command{
 	Short: "Create project",
 	Long:  "Creates a new project with the given name",
 	Args:  cobra.ExactArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		handlers.PrintCreateVersionWarning()
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 

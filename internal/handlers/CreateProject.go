@@ -19,6 +19,7 @@ type Project struct {
 	ProjectType string   `json:"projectType"`
 	RouterType  string   `json:"routerType"`
 	Packages    []string `json:"packages"`
+	Version     string   `json:"version"`
 }
 
 func runCommand(projectName string, name string, args ...string) error {
@@ -35,6 +36,7 @@ func CreateProject(req Project) error {
 
 	projectName := utils.Slugify(req.Name)
 	req.Name = projectName
+	req.Version = utils.GetCurrentVersion()
 
 	folders := []string{
 		projectName,

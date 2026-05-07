@@ -58,6 +58,9 @@ go build -o build/went .
 # Versiyon
 ./build/went version
 
+# Guncelleme
+./build/went update
+
 # Yeni proje olustur
 ./build/went create my-app
 
@@ -120,6 +123,7 @@ Varsayilan olarak en son release indirilir. Belirli bir tag kurmak istersen `WEN
 Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `went --help` ile dogrulayabilirsin.
 
 > **On Kosul:** `create` disindaki tum komutlar calisma dizininde `wentconfig.json` dosyasi bekler. Dosya yoksa komut isleme devam etmez.
+> `update` ve `version` komutlari globaldir ve proje dizini disindan da calistirilabilir.
 
 ### migrate:rollback Flag'leri
 

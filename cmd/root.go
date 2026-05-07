@@ -13,7 +13,7 @@ var Root = &cobra.Command{
 	Short: "Went uygulaması",
 	Long:  "Cobra ile yazılmış basit bir Went uygulaması",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if cmd.Name() == "create" || cmd.Name() == "help" {
+		if cmd.Name() == "create" || cmd.Name() == "help" || cmd.Name() == "update" || cmd.Name() == "version" {
 			return nil
 		}
 
@@ -38,6 +38,7 @@ var Root = &cobra.Command{
 
 func init() {
 	Root.AddCommand(Version)
+	Root.AddCommand(Update)
 	Root.AddCommand(Create)
 	Root.AddCommand(GenerateRouter)
 	Root.AddCommand(GenerateModel)
