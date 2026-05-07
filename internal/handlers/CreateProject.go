@@ -234,7 +234,7 @@ func CreateProject(req Project) error {
 		return err
 	}
 
-	err = utils.CreateFileWithContent(filepath.Join(projectName, ".devwatchignore"), tmplProject.DevwatchignoreTemplate())
+	err = utils.CreateFileWithContent(filepath.Join(projectName, ".wentignore"), tmplProject.DevwatchignoreTemplate())
 	if err != nil {
 		return err
 	}
