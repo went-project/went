@@ -136,19 +136,20 @@ func RunWithWatcher(root string) error {
 func printRunHeader(root, port, portSource, ignoreSource string) {
 	output.PrintHeader("WENT hot reload started")
 	output.PrintLine("Watching", root)
-	if port != "" {
-		output.PrintLine("Port", fmt.Sprintf("%s (%s)", port, portSource))
-		output.PrintLine("Local", fmt.Sprintf("http://127.0.0.1:%s", port))
-		output.PrintLine("Swagger", fmt.Sprintf("http://127.0.0.1:%s/swagger/index.html", port))
-		networkIP := getNetworkIP()
-		if networkIP != "" {
-			output.PrintLine("Network", fmt.Sprintf("http://%s:%s", networkIP, port))
-			output.PrintLine("Swagger", fmt.Sprintf("http://%s:%s/swagger/index.html", networkIP, port))
-		} else {
-			output.PrintWarning("No network address found")
-		}
+	defaultPort := "8080"
+	if port == "" {
+		port = defaultPort
+		portSource = "default"
+	}
+	output.PrintLine("Port", fmt.Sprintf("%s (%s)", port, portSource))
+	output.PrintLine("Local", fmt.Sprintf("http://127.0.0.1:%s", port))
+	output.PrintLine("Swagger", fmt.Sprintf("http://127.0.0.1:%s/swagger/index.html", port))
+	networkIP := getNetworkIP()
+	if networkIP != "" {
+		output.PrintLine("Network", fmt.Sprintf("http://%s:%s", networkIP, port))
+		output.PrintLine("Swagger", fmt.Sprintf("http://%s:%s/swagger/index.html", networkIP, port))
 	} else {
-		output.PrintWarning("Port is not set")
+		output.PrintWarning("No network address found")
 	}
 	if ignoreSource != "" {
 		output.PrintLine("Ignore file", ignoreSource)
