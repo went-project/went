@@ -129,3 +129,15 @@ esac
 
 log "Kurulum başarılı! Aramıza hoşgeldin! Hemen başlamak için terminalini yeniden açabilir veya aşağıdaki komutu çalıştırabilirsin:"
 log "  $binary_name --help"
+log "install.sh kaldırılıyor..."
+# Delete the installer script if it is a local file and writable.
+delete_self() {
+  if [ -n "$0" ]; then
+    script_path="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/$(basename "$0")"
+    if [ -f "$script_path" ] && [ -w "$script_path" ]; then
+      rm -f "$script_path"
+    fi
+  fi
+}
+
+delete_self
