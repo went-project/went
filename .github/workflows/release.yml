@@ -5,9 +5,6 @@ on:
     branches:
       - main
       - beta
-    tags:
-      - 'v*.*.*'
-      - 'v*.*.*-beta.*'
 
 permissions:
   contents: write
@@ -82,76 +79,6 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta'
     env:
       RELEASE_VERSION: ${{ needs.version.outputs.version_tag }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: windows
-            runs_on: windows-latest
-            goos: windows
-            goarch: amd64
-            artifact_prefix: went-windows-amd64
-          - name: linux
-            runs_on: ubuntu-latest
-            goos: linux
-            goarch: amd64
-            artifact_prefix: went-linux-amd64
-          - name: linux-arm64
-            runs_on: ubuntu-latest
-            goos: linux
-            goarch: arm64
-            artifact_prefix: went-linux-arm64
-          - name: macos
-            runs_on: macos-latest
-            goos: darwin
-            goarch: amd64
-            artifact_prefix: went-darwin-amd64
-          - name: macos-arm64
-            runs_on: macos-latest
-            goos: darwin
-            goarch: arm64
-            artifact_prefix: went-darwin-arm64
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Build binary
-        id: build
-        shell: bash
-        env:
-          CGO_ENABLED: 0
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          mkdir -p dist
-          version="${RELEASE_VERSION#v}"
-          artifact_name="${{ matrix.artifact_prefix }}-v.${version}"
-          if [ "$GOOS" = "windows" ]; then
-            artifact_name="${artifact_name}.exe"
-          fi
-          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
-          go build -trimpath -ldflags="-s -w -X went/internal/utils.CurrentVersion=${RELEASE_VERSION}" -o "dist/$artifact_name" .
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build.outputs.artifact_name }}
-          path: dist/${{ steps.build.outputs.artifact_name }}
-          if-no-files-found: error
-
-  build_tag:
-    name: Build tag ${{ matrix.name }}
-    runs-on: ${{ matrix.runs_on }}
-    if: startsWith(github.ref, 'refs/tags/') && github.actor != 'github-actions[bot]'
-    env:
-      RELEASE_VERSION: ${{ github.ref_name }}
     strategy:
       fail-fast: false
       matrix:
