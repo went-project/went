@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"went/internal/output"
 	"went/internal/utils"
 
 	"github.com/fsnotify/fsnotify"
@@ -21,13 +22,6 @@ var (
 	activeCmd     *exec.Cmd
 	activeCmdDone chan struct{}
 	activeCmdMu   sync.Mutex
-)
-
-const (
-	runBannerColor  = "\033[36m"
-	runSuccessColor = "\033[32m"
-	runWarningColor = "\033[33m"
-	resetColor      = "\033[0m"
 )
 
 func RunWithWatcher(root string) error {
@@ -89,7 +83,7 @@ func RunWithWatcher(root string) error {
 				}
 
 				if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
-					fmt.Printf("%s⟳ Change detected:%s %s\n", runWarningColor, resetColor, event.Name)
+					output.PrintWarning("Change detected: %s", event.Name)
 					select {
 					case events <- struct{}{}:
 					default:
@@ -99,7 +93,7 @@ func RunWithWatcher(root string) error {
 				if !ok {
 					return
 				}
-				fmt.Printf("%swatcher error:%s %v\n", runWarningColor, resetColor, err)
+				output.PrintWarning("Watcher error: %v", err)
 			}
 		}
 	}()
@@ -111,7 +105,7 @@ func RunWithWatcher(root string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("\n%s⏹ Shutting down watcher...%s\n", runBannerColor, resetColor)
+			output.PrintInfo("Shutting down watcher...")
 			topAndWait()
 			return nil
 		case <-events:
@@ -129,41 +123,40 @@ func RunWithWatcher(root string) error {
 			restartC = nil
 			ignorePatterns, ignoreSource, err = utils.LoadIgnorePatterns(".wentignore", ".devwatchignore")
 			if err != nil {
-				fmt.Printf("%sWarning: failed to reload ignore rules:%s %v\n", runWarningColor, resetColor, err)
+				output.PrintWarning("Failed to reload ignore rules: %v", err)
 			}
-			fmt.Printf("%s↺ Restarting application...%s\n", runBannerColor, resetColor)
+			output.PrintInfo("Restarting application...")
 			if err := restartApp(absRoot, port); err != nil {
-				fmt.Printf("%sError: failed to restart application:%s %v\n", runWarningColor, resetColor, err)
+				output.PrintError("Failed to restart application: %v", err)
 			}
 		}
 	}
 }
 
 func printRunHeader(root, port, portSource, ignoreSource string) {
-	fmt.Println(runBannerColor + "╭────────────────────────────────────────────╮" + resetColor)
-	fmt.Println(runBannerColor + "│" + resetColor + "  WENT hot reload started                   " + runBannerColor + "│" + resetColor)
-	fmt.Println(runBannerColor + "╰────────────────────────────────────────────╯" + resetColor)
-	fmt.Printf("%sWatching:%s %s\n", runSuccessColor, resetColor, root)
+	output.PrintHeader("WENT hot reload started")
+	output.PrintLine("Watching", root)
 	if port != "" {
-		fmt.Printf("%sPORT:%s %s (%s)\n", runSuccessColor, resetColor, port, portSource)
-		fmt.Printf("%sLocal:%s   http://127.0.0.1:%s\n", runSuccessColor, resetColor, port)
-		fmt.Printf("%sSwagger:%s http://127.0.0.1:%s/swagger/index.html\n", runSuccessColor, resetColor, port)
+		output.PrintLine("Port", fmt.Sprintf("%s (%s)", port, portSource))
+		output.PrintLine("Local", fmt.Sprintf("http://127.0.0.1:%s", port))
+		output.PrintLine("Swagger", fmt.Sprintf("http://127.0.0.1:%s/swagger/index.html", port))
 		networkIP := getNetworkIP()
 		if networkIP != "" {
-			fmt.Printf("%sNetwork:%s http://%s:%s\n", runSuccessColor, resetColor, networkIP, port)
-			fmt.Printf("%sSwagger:%s http://%s:%s/swagger/index.html\n", runSuccessColor, resetColor, networkIP, port)
+			output.PrintLine("Network", fmt.Sprintf("http://%s:%s", networkIP, port))
+			output.PrintLine("Swagger", fmt.Sprintf("http://%s:%s/swagger/index.html", networkIP, port))
 		} else {
-			fmt.Printf("%sNetwork:%s no network address found\n", runWarningColor, resetColor)
+			output.PrintWarning("No network address found")
 		}
 	} else {
-		fmt.Printf("%sPORT:%s not set\n", runWarningColor, resetColor)
+		output.PrintWarning("Port is not set")
 	}
 	if ignoreSource != "" {
-		fmt.Printf("%sIgnore file:%s %s\n", runSuccessColor, resetColor, ignoreSource)
+		output.PrintLine("Ignore file", ignoreSource)
 	} else {
-		fmt.Printf("%sIgnore file:%s not found\n", runWarningColor, resetColor)
+		output.PrintWarning("No ignore file found")
 	}
-	fmt.Printf("%sHot reload is active.%s\n\n", runSuccessColor, resetColor)
+	output.PrintSuccess("Hot reload is active.")
+	output.PrintSpacing()
 }
 
 func getNetworkIP() string {
@@ -247,20 +240,20 @@ func startApp(root, port string) error {
 		close(activeCmdDone)
 	}()
 
-	fmt.Printf("%s▶ Application started%s (PID: %d)\n\n", runSuccessColor, resetColor, cmd.Process.Pid)
+	output.PrintSuccess("Application started (PID: %d)", cmd.Process.Pid)
 	return nil
 }
 
 func restartApp(root, port string) error {
 	if err := terminateActiveProcess(5 * time.Second); err != nil {
-		fmt.Printf("%sWarning: failed to stop existing process:%s %v\n", runWarningColor, resetColor, err)
+		output.PrintWarning("Failed to stop existing process: %v", err)
 	}
 	return startApp(root, port)
 }
 
 func topAndWait() {
 	if err := terminateActiveProcess(5 * time.Second); err != nil {
-		fmt.Printf("%sWarning: failed to stop running process:%s %v\n", runWarningColor, resetColor, err)
+		output.PrintWarning("Failed to stop running process: %v", err)
 	}
 }
 

@@ -1,9 +1,8 @@
 package commands
 
 import (
-	"fmt"
-
 	"went/internal/handlers"
+	"went/internal/output"
 
 	"github.com/spf13/cobra"
 )
@@ -33,9 +32,9 @@ var Create = &cobra.Command{
 
 		err := handlers.CreateProject(project)
 		if err != nil {
-			fmt.Printf("Error creating project: %v\n", err)
+			output.PrintError("Failed to create project: %v", err)
 		} else {
-			fmt.Printf("Project '%s' created successfully!\n", name)
+			output.PrintSuccess("Project '%s' created successfully!", name)
 		}
 	},
 }

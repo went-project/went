@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"went/internal/output"
 	"went/internal/utils"
 )
 
@@ -53,7 +54,7 @@ func getLatestReleaseTag(ctx context.Context) (string, error) {
 	}
 
 	if strings.TrimSpace(payload.TagName) == "" {
-		return "", errors.New("GitHub release tag_name boş")
+		return "", errors.New("GitHub release tag_name is empty")
 	}
 
 	return strings.TrimSpace(payload.TagName), nil
@@ -81,12 +82,12 @@ func CheckLatestVersion() (*VersionCheckResult, error) {
 func PrintCreateVersionWarning() {
 	result, err := CheckLatestVersion()
 	if err != nil {
-		fmt.Printf("Warning: Güncel sürüm kontrolü yapılamadı: %v\n", err)
+		output.PrintWarning("Unable to check for the latest version: %v", err)
 		return
 	}
 
 	if result.UpdateAvailable {
-		fmt.Printf("Warning: Yeni sürüm bulundu: %s (şu an: %s). Güncellemek için 'went update' kullanabilirsiniz.\n", result.Latest, result.Current)
+		output.PrintWarning("A newer version is available: %s (currently %s). Run 'went update' to install it.", result.Latest, result.Current)
 	}
 }
 
@@ -94,17 +95,17 @@ func UpdateWent() error {
 	result, err := CheckLatestVersion()
 	if err != nil {
 		if isNetworkError(err) {
-			return fmt.Errorf("Güncelleme başarısız: internet bağlantısı yok veya GitHub erişilemiyor: %w", err)
+			return fmt.Errorf("Update failed: network is unavailable or GitHub cannot be reached: %w", err)
 		}
-		return fmt.Errorf("Güncelleme kontrolü başarısız: %w", err)
+		return fmt.Errorf("Update check failed: %w", err)
 	}
 
 	if !result.UpdateAvailable {
-		fmt.Printf("Went zaten güncel. Şu anki sürüm: %s\n", result.Current)
+		output.PrintSuccess("Went is already up to date. Current version: %s", result.Current)
 		return nil
 	}
 
-	fmt.Printf("Yeni sürüm bulundu: %s (şu an %s). Güncelleme başlatılıyor...\n", result.Latest, result.Current)
+	output.PrintInfo("A new version is available: %s (currently %s). Starting update...", result.Latest, result.Current)
 	cmdName, args, err := installCommand()
 	if err != nil {
 		return err
@@ -118,7 +119,7 @@ func UpdateWent() error {
 		return fmt.Errorf("install script failed: %w", err)
 	}
 
-	fmt.Println("Güncelleme tamamlandı.")
+	output.PrintSuccess("Update completed successfully.")
 	return nil
 }
 
@@ -133,7 +134,7 @@ func installCommand() (string, []string, error) {
 		script := fmt.Sprintf("Invoke-WebRequest -Uri '%s/install.ps1' -UseBasicParsing -OutFile $env:TEMP\\went-update.ps1; & $env:TEMP\\went-update.ps1; Remove-Item -Force $env:TEMP\\went-update.ps1 -ErrorAction SilentlyContinue", installScriptBase)
 		return command, []string{"-NoProfile", "-Command", script}, nil
 	default:
-		return "", nil, fmt.Errorf("desteklenmeyen işletim sistemi: %s", runtime.GOOS)
+		return "", nil, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 }
 

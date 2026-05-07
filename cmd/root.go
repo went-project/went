@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"os"
 
+	"went/internal/output"
 	"went/internal/utils"
 
 	"github.com/spf13/cobra"
 )
 
+var showVersionFlag bool
+
 var Root = &cobra.Command{
 	Use:     "went",
-	Short:   "Went uygulaması",
-	Long:    "Cobra ile yazılmış basit bir Went uygulaması",
+	Short:   "Went CLI and project scaffolding toolkit",
+	Long:    "A lightweight Cobra-based CLI for scaffolding, running, and migrating Went projects.",
 	Version: utils.GetCurrentVersion(),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == "create" || cmd.Name() == "help" || cmd.Name() == "update" || cmd.Name() == "version" {
@@ -26,20 +29,28 @@ var Root = &cobra.Command{
 
 		if _, err := os.Stat("wentconfig.json"); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				return fmt.Errorf("wentconfig.json bulunamadı: bu komutu proje klasoru icinde calistirin")
+				return fmt.Errorf("wentconfig.json not found: run this command in a project directory")
 			}
-			return fmt.Errorf("wentconfig.json kontrol edilirken hata: %w", err)
+			return fmt.Errorf("failed to validate wentconfig.json: %w", err)
 		}
 
 		return nil
 	},
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Went uygulamasına hoş geldiniz!")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if showVersionFlag {
+			printVersionInfo()
+			return nil
+		}
+
+		output.PrintHeader("Went CLI")
+		output.PrintInfo("Welcome to Went. Run `went --help` to explore available commands.")
 		cmd.Help()
+		return nil
 	},
 }
 
 func init() {
+	Root.PersistentFlags().BoolVarP(&showVersionFlag, "version", "v", false, "Show version information")
 	Root.AddCommand(Version)
 	Root.AddCommand(Update)
 	Root.AddCommand(Create)

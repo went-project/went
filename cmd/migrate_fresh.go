@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 
 	"went/internal/handlers"
+	"went/internal/output"
 
 	"github.com/spf13/cobra"
 )
@@ -14,11 +14,11 @@ var MigrateFresh = &cobra.Command{
 	Short: "Drop all tables and re-run every migration",
 	Long:  "Runs all down migration files in reverse order, then re-runs all up migration files",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Running fresh migration...")
+		output.PrintInfo("Running fresh migration...")
 		if err := handlers.FreshMigrations(); err != nil {
-			fmt.Printf("Fresh migration failed: %v\n", err)
+			output.PrintError("Fresh migration failed: %v", err)
 			os.Exit(1)
 		}
-		fmt.Println("Done.")
+		output.PrintSuccess("Fresh migration completed successfully.")
 	},
 }

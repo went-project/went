@@ -1,9 +1,8 @@
 package commands
 
 import (
-	"fmt"
-
 	"went/internal/handlers"
+	"went/internal/output"
 
 	"github.com/spf13/cobra"
 )
@@ -24,25 +23,25 @@ Flags:
 		withAll, _ := cmd.Flags().GetBool("all")
 
 		if withAll {
-			fmt.Printf("Generating full related templates: %s\n", name)
+			output.PrintInfo("Generating full related templates for %s", name)
 			if err := handlers.CreateAllRelated(name); err != nil {
-				fmt.Printf("Error generating related templates: %v\n", err)
+				output.PrintError("Failed to generate related templates: %v", err)
 				return
 			}
-			fmt.Printf("All related templates for '%s' generated successfully!\n", name)
+			output.PrintSuccess("All related templates for '%s' generated successfully!", name)
 			return
 		}
 
 		if withMigration {
-			fmt.Printf("Note: --migration is implicit in skeleton related generation mode.\n")
+			output.PrintInfo("Note: --migration is implicit in skeleton related generation mode.")
 		}
 
-		fmt.Printf("Generating skeleton related templates: %s\n", name)
+		output.PrintInfo("Generating skeleton related templates for %s", name)
 		if err := handlers.CreateAllRelatedSkeleton(name); err != nil {
-			fmt.Printf("Error generating skeleton related templates: %v\n", err)
+			output.PrintError("Failed to generate skeleton related templates: %v", err)
 			return
 		}
-		fmt.Printf("Skeleton related templates for '%s' generated successfully!\n", name)
+		output.PrintSuccess("Skeleton related templates for '%s' generated successfully!", name)
 	},
 }
 

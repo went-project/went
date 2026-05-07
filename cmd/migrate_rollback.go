@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 
 	"went/internal/handlers"
+	"went/internal/output"
 
 	"github.com/spf13/cobra"
 )
@@ -16,12 +16,12 @@ var MigrateRollback = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		step, _ := cmd.Flags().GetInt("step")
 
-		fmt.Printf("Rolling back %d migration(s)...\n", step)
+		output.PrintInfo("Rolling back %d migration(s)...", step)
 		if err := handlers.RollbackMigrations(step); err != nil {
-			fmt.Printf("Rollback failed: %v\n", err)
+			output.PrintError("Rollback failed: %v", err)
 			os.Exit(1)
 		}
-		fmt.Println("Done.")
+		output.PrintSuccess("Rollback completed successfully.")
 	},
 }
 

@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"went/internal/output"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -200,12 +202,12 @@ func RunMigrations() error {
 		if err := runner.record(name); err != nil {
 			return fmt.Errorf("record %s: %w", name, err)
 		}
-		fmt.Printf("  ✓ Migrated:   %s\n", name)
+		output.PrintStep("✓", "Migrated: %s", name)
 		ran++
 	}
 
 	if ran == 0 {
-		fmt.Println("Nothing to migrate.")
+		output.PrintInfo("Nothing to migrate.")
 	}
 	return nil
 }
@@ -227,7 +229,7 @@ func RollbackMigrations(step int) error {
 		return err
 	}
 	if len(ordered) == 0 {
-		fmt.Println("Nothing to rollback.")
+		output.PrintInfo("Nothing to rollback.")
 		return nil
 	}
 
@@ -254,7 +256,7 @@ func RollbackMigrations(step int) error {
 		if err := runner.unrecord(name); err != nil {
 			return fmt.Errorf("unrecord %s: %w", name, err)
 		}
-		fmt.Printf("  ✓ Rolled back: %s\n", name)
+		output.PrintStep("✓", "Rolled back: %s", name)
 	}
 	return nil
 }
@@ -282,7 +284,7 @@ func FreshMigrations() error {
 			continue
 		}
 		_, _ = runner.db.Exec(string(content))
-		fmt.Printf("  ↓ Dropped:    %s\n", name)
+		output.PrintStep("↓", "Dropped: %s", name)
 	}
 
 	_, _ = runner.db.Exec("DROP TABLE IF EXISTS wentmigrations")
@@ -304,7 +306,7 @@ func FreshMigrations() error {
 		if err := runner.record(name); err != nil {
 			return fmt.Errorf("record %s: %w", name, err)
 		}
-		fmt.Printf("  ✓ Migrated:   %s\n", name)
+		output.PrintStep("✓", "Migrated: %s", name)
 	}
 	return nil
 }

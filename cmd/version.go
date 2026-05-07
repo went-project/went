@@ -1,47 +1,52 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 
 	"went/internal/handlers"
+	"went/internal/output"
 	"went/internal/utils"
 
 	"github.com/spf13/cobra"
 )
 
+func printVersionInfo() {
+	output.PrintHeader("Version Info")
+	output.PrintLine("Binary", utils.GetCurrentVersion())
+
+	if _, err := os.Stat("wentconfig.json"); err == nil {
+		config, err := utils.ReadConfigFile()
+		if err != nil {
+			output.PrintWarning("Project config loaded, but version could not be read: %v", err)
+		} else if versionValue, ok := config["version"]; ok {
+			if versionStr, ok := versionValue.(string); ok && versionStr != "" {
+				output.PrintLine("Project", versionStr)
+			} else {
+				output.PrintLine("Project", "unavailable")
+			}
+		} else {
+			output.PrintLine("Project", "unavailable")
+		}
+	}
+
+	result, err := handlers.CheckLatestVersion()
+	if err != nil {
+		output.PrintWarning("Unable to check latest release: %v", err)
+		return
+	}
+
+	output.PrintLine("Latest", result.Latest)
+	if result.UpdateAvailable {
+		output.PrintSuccess("Update available — run 'went update' to install the latest version.")
+	} else {
+		output.PrintInfo("No updates available.")
+	}
+}
+
 var Version = &cobra.Command{
 	Use:   "version",
-	Short: "Sürümü göster",
+	Short: "Display Went version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Went binary version: %s\n", utils.GetCurrentVersion())
-
-		if _, err := os.Stat("wentconfig.json"); err == nil {
-			config, err := utils.ReadConfigFile()
-			if err != nil {
-				fmt.Printf("Project config yüklendi, ancak version okunamadi: %v\n", err)
-			} else if versionValue, ok := config["version"]; ok {
-				if versionStr, ok := versionValue.(string); ok && versionStr != "" {
-					fmt.Printf("Project version: %s\n", versionStr)
-				} else {
-					fmt.Println("Project version: unavailable")
-				}
-			} else {
-				fmt.Println("Project version: unavailable")
-			}
-		}
-
-		result, err := handlers.CheckLatestVersion()
-		if err != nil {
-			fmt.Printf("Update kontrolü yapılamadı: %v\n", err)
-			return
-		}
-
-		fmt.Printf("Latest release: %s\n", result.Latest)
-		if result.UpdateAvailable {
-			fmt.Println("Update available: yes (run 'went update')")
-		} else {
-			fmt.Println("Update available: no")
-		}
+		printVersionInfo()
 	},
 }
