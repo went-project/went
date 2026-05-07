@@ -142,7 +142,7 @@ jobs:
           tags: true
 
       - name: Set up Rust
-        uses: actions/setup-rust@v1
+        uses: rust-lang/setup-rust@v1
         with:
           toolchain: stable
 
