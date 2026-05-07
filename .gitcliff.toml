@@ -1,0 +1,35 @@
+[git]
+tag = "v*"
+sort = "scope"
+
+[[group]]
+section = "Features"
+type = "feat"
+
+[[group]]
+section = "Bug Fixes"
+type = "fix"
+
+[[group]]
+section = "Documentation"
+type = "docs"
+
+[[group]]
+section = "Performance Improvements"
+type = "perf"
+
+[[group]]
+section = "Refactorings"
+type = "refactor"
+
+[[group]]
+section = "Tests"
+type = "test"
+
+[[group]]
+section = "Chores"
+type = "chore"
+
+[[group]]
+section = "Other Changes"
+type = "*"

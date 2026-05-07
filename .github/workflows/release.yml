@@ -135,6 +135,28 @@ jobs:
       RELEASE_VERSION: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.version_tag || github.ref_name }}
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          tags: true
+
+      - name: Set up Rust
+        uses: actions/setup-rust@v1
+        with:
+          toolchain: stable
+
+      - name: Install git-cliff
+        run: cargo install git-cliff --locked
+
+      - name: Generate changelog
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+        run: |
+          git fetch --prune --unshallow || true
+          git cliff --config .gitcliff.toml --output CHANGELOG.md --tag "${RELEASE_VERSION}"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -146,5 +168,5 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: ${{ env.RELEASE_VERSION }}
+          body_path: CHANGELOG.md
           files: dist/*
-          generate_release_notes: true
