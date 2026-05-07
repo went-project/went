@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - beta
     tags:
       - 'v*.*.*'
       - 'v*.*.*-beta.*'
@@ -15,7 +16,7 @@ jobs:
   version:
     name: Create version tag
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta'
 
     outputs:
       version_tag: ${{ steps.version.outputs.version_tag }}
@@ -35,15 +36,33 @@ jobs:
         shell: bash
         run: |
           month_year="$(date +%m%y)"
-          latest_tag="$(git tag -l "v2.${month_year}.*" | sort -V | tail -n 1)"
-          if [ -n "$latest_tag" ]; then
-            latest_number="${latest_tag##*.}"
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            latest_tag="$(git tag -l "v2.${month_year}.*" | grep -v -- "-beta" | sort -V | tail -n 1)"
+            if [ -n "$latest_tag" ]; then
+              latest_number="${latest_tag##*.}"
+            else
+              latest_number=0
+            fi
+            next_number=$((latest_number + 1))
+            version_tag="v2.${month_year}.${next_number}"
           else
-            latest_number=0
+            latest_tag="$(git tag -l "v2.${month_year}.*" | grep -v -- "-beta" | sort -V | tail -n 1)"
+            if [ -n "$latest_tag" ]; then
+              next_number="${latest_tag##*.}"
+              next_number=$((next_number + 1))
+            else
+              next_number=1
+            fi
+            beta_prefix="v2.${month_year}.${next_number}-beta."
+            latest_beta="$(git tag -l "${beta_prefix}*" | sort -V | tail -n 1)"
+            if [ -n "$latest_beta" ]; then
+              beta_number="${latest_beta##*.}"
+              beta_number=$((beta_number + 1))
+            else
+              beta_number=1
+            fi
+            version_tag="${beta_prefix}${beta_number}"
           fi
-
-          next_number=$((latest_number + 1))
-          version_tag="v2.${month_year}.${next_number}"
           echo "version_tag=$version_tag" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
@@ -60,7 +79,7 @@ jobs:
     name: Build branch ${{ matrix.name }}
     runs-on: ${{ matrix.runs_on }}
     needs: [version]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta'
     env:
       RELEASE_VERSION: ${{ needs.version.outputs.version_tag }}
     strategy:
@@ -201,7 +220,7 @@ jobs:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
     needs: [version, build_branch]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta'
     env:
       RELEASE_VERSION: ${{ needs.version.outputs.version_tag }}
 
