@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"os"
 
+	"went/internal/utils"
+
 	"github.com/spf13/cobra"
 )
 
 var Root = &cobra.Command{
-	Use:   "went",
-	Short: "Went uygulaması",
-	Long:  "Cobra ile yazılmış basit bir Went uygulaması",
+	Use:     "went",
+	Short:   "Went uygulaması",
+	Long:    "Cobra ile yazılmış basit bir Went uygulaması",
+	Version: utils.GetCurrentVersion(),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == "create" || cmd.Name() == "help" || cmd.Name() == "update" || cmd.Name() == "version" {
 			return nil

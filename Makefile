@@ -3,6 +3,8 @@
 BINARY_NAME=went
 BUILD_DIR=./build
 INSTALL_DIR=/usr/local/bin
+VERSION ?= v1.0.0
+LDFLAGS=-X went/internal/utils.CurrentVersion=$(VERSION)
 SOURCE_FILES=$(shell find . -name "*.go" -type f)
 
 all: build
@@ -11,7 +13,7 @@ build: $(BUILD_DIR)/$(BINARY_NAME)
 
 $(BUILD_DIR)/$(BINARY_NAME): $(SOURCE_FILES)
 	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) .
+	go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) .
 
 install: build
 	@mkdir -p $(INSTALL_DIR)
