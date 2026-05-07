@@ -15,8 +15,8 @@ var showVersionFlag bool
 
 var Root = &cobra.Command{
 	Use:     "went",
-	Short:   "Went CLI and project scaffolding toolkit",
-	Long:    "A lightweight Cobra-based CLI for scaffolding, running, and migrating Went projects.",
+	Short:   "Went Framework CLI",
+	Long:    "WENT.\nThe lightweight framework for Go developers.\nA clean framework for modern Go services.\nBuild fast. Stay simple. Minimal by design. Powerful by default.\n\nFor further documentation, visit https://wentframework.com/docs.html.",
 	Version: utils.GetCurrentVersion(),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == "create" || cmd.Name() == "help" || cmd.Name() == "update" || cmd.Name() == "version" {
