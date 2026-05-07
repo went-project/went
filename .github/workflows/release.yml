@@ -142,9 +142,10 @@ jobs:
           tags: true
 
       - name: Set up Rust
-        uses: rust-lang/setup-rust@v1
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          profile: minimal
 
       - name: Install git-cliff
         run: cargo install git-cliff --locked
