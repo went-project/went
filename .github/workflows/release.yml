@@ -117,7 +117,7 @@ jobs:
             artifact_name="${artifact_name}.exe"
           fi
           echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
-          go build -trimpath -ldflags="-s -w" -o "dist/$artifact_name" .
+          go build -trimpath -ldflags="-s -w -X went/internal/utils.CurrentVersion=${RELEASE_VERSION}" -o "dist/$artifact_name" .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
