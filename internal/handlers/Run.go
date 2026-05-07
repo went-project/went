@@ -8,10 +8,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"went/internal/utils"
@@ -60,7 +58,7 @@ func RunWithWatcher(root string) error {
 		return fmt.Errorf("failed to watch project directories: %w", err)
 	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), terminationSignals()...)
 	defer cancel()
 
 	if err := startApp(absRoot, port); err != nil {
@@ -236,9 +234,7 @@ func startApp(root, port string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Env = buildAppEnv(port)
 
-	if runtime.GOOS != "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	}
+	setupProcessGroup(cmd)
 
 	if err := cmd.Start(); err != nil {
 		return err
@@ -278,15 +274,7 @@ func terminateActiveProcess(timeout time.Duration) error {
 		return nil
 	}
 
-	if runtime.GOOS != "windows" {
-		if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
-			_ = syscall.Kill(-pgid, syscall.SIGTERM)
-		} else {
-			_ = cmd.Process.Signal(syscall.SIGTERM)
-		}
-	} else {
-		_ = cmd.Process.Kill()
-	}
+	_ = signalProcessGroup(cmd)
 
 	finished := make(chan struct{})
 	go func() {
@@ -300,13 +288,7 @@ func terminateActiveProcess(timeout time.Duration) error {
 	case <-finished:
 		return nil
 	case <-time.After(timeout):
-		if runtime.GOOS != "windows" {
-			if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
-				_ = syscall.Kill(-pgid, syscall.SIGKILL)
-			}
-		} else {
-			_ = cmd.Process.Kill()
-		}
+		_ = killProcessGroup(cmd)
 		<-finished
 	}
 
