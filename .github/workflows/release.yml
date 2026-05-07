@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - beta
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -32,33 +34,33 @@ jobs:
         id: version
         shell: bash
         run: |
-          month_year="$(date +%m%y)"
+          git fetch --force --tags
+
           if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-            latest_tag="$(git tag -l "v2.${month_year}.*" | grep -v -- "-beta" | sort -V | tail -n 1)"
+            latest_tag="$(git tag -l "v2.*" | grep -v -- "-beta" | sort -V | tail -n 1)"
             if [ -n "$latest_tag" ]; then
-              latest_number="${latest_tag##*.}"
+              major="$(echo "$latest_tag" | cut -d. -f1 | sed 's/^v//')"
+              minor="$(echo "$latest_tag" | cut -d. -f2)"
+              patch="$(echo "$latest_tag" | cut -d. -f3)"
+              next_patch=$((patch + 1))
+              version_tag="v${major}.${minor}.${next_patch}"
             else
-              latest_number=0
+              version_tag="v2.0.0"
             fi
-            next_number=$((latest_number + 1))
-            version_tag="v2.${month_year}.${next_number}"
           else
-            latest_tag="$(git tag -l "v2.${month_year}.*" | grep -v -- "-beta" | sort -V | tail -n 1)"
-            if [ -n "$latest_tag" ]; then
-              next_number="${latest_tag##*.}"
-              next_number=$((next_number + 1))
-            else
-              next_number=1
-            fi
-            beta_prefix="v2.${month_year}.${next_number}-beta."
-            latest_beta="$(git tag -l "${beta_prefix}*" | sort -V | tail -n 1)"
+            latest_beta="$(git tag -l "v2.*-beta.*" | sort -V | tail -n 1)"
             if [ -n "$latest_beta" ]; then
               beta_number="${latest_beta##*.}"
-              beta_number=$((beta_number + 1))
+              next_beta=$((beta_number + 1))
+              version_tag="${latest_beta%-.*}.${next_beta}"
             else
-              beta_number=1
+              latest_stable="$(git tag -l "v2.*" | grep -v -- "-beta" | sort -V | tail -n 1)"
+              if [ -n "$latest_stable" ]; then
+                version_tag="${latest_stable}-beta.1"
+              else
+                version_tag="v2.0.0-beta.1"
+              fi
             fi
-            version_tag="${beta_prefix}${beta_number}"
           fi
           echo "version_tag=$version_tag" >> "$GITHUB_OUTPUT"
 
@@ -189,6 +191,76 @@ jobs:
           body_path: CHANGELOG.md
           files: dist/*
           prerelease: ${{ contains(env.RELEASE_VERSION, '-beta') }}
+
+  build_tag:
+    name: Build tag ${{ github.ref_name }}
+    runs-on: ${{ matrix.runs_on }}
+    if: startsWith(github.ref, 'refs/tags/') && github.actor != 'github-actions[bot]'
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            runs_on: windows-latest
+            goos: windows
+            goarch: amd64
+            artifact_prefix: went-windows-amd64
+          - name: linux
+            runs_on: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            artifact_prefix: went-linux-amd64
+          - name: linux-arm64
+            runs_on: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            artifact_prefix: went-linux-arm64
+          - name: macos
+            runs_on: macos-latest
+            goos: darwin
+            goarch: amd64
+            artifact_prefix: went-darwin-amd64
+          - name: macos-arm64
+            runs_on: macos-latest
+            goos: darwin
+            goarch: arm64
+            artifact_prefix: went-darwin-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        id: build
+        shell: bash
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          mkdir -p dist
+          version="${RELEASE_VERSION#v}"
+          artifact_name="${{ matrix.artifact_prefix }}-v.${version}"
+          if [ "$GOOS" = "windows" ]; then
+            artifact_name="${artifact_name}.exe"
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          go build -trimpath -ldflags="-s -w -X went/internal/utils.CurrentVersion=${RELEASE_VERSION}" -o "dist/$artifact_name" .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.artifact_name }}
+          path: dist/${{ steps.build.outputs.artifact_name }}
+          if-no-files-found: error
 
   release_tag:
     name: Publish GitHub Release from tag
