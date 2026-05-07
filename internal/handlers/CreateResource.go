@@ -27,11 +27,12 @@ func CreateResource(name string, full bool) error {
 		return err
 	}
 
-	// Write pagination.go once if it does not already exist.
-	paginationPath := filepath.Join("http", "resources", "pagination.go")
-	if _, err := os.Stat(paginationPath); os.IsNotExist(err) {
-		if err := os.WriteFile(paginationPath, []byte(tmplHTTP.PaginationTemplate()), 0644); err != nil {
-			return err
+	if full {
+		paginationPath := filepath.Join("http", "resources", "pagination.go")
+		if _, err := os.Stat(paginationPath); os.IsNotExist(err) {
+			if err := os.WriteFile(paginationPath, []byte(tmplHTTP.PaginationTemplate()), 0644); err != nil {
+				return err
+			}
 		}
 	}
 

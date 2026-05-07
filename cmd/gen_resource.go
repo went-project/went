@@ -16,22 +16,24 @@ var GenerateResource = &cobra.Command{
 		name := args[0]
 		withAll, _ := cmd.Flags().GetBool("all")
 
+		opts := handlers.GenerationOptions{
+			Name: name,
+			Type: handlers.GeneratorTypeResource,
+			All:  withAll,
+		}
+
 		if withAll {
 			output.PrintInfo("Generating full related templates for %s", name)
-			if err := handlers.CreateAllRelated(name); err != nil {
-				output.PrintError("Failed to generate related templates: %v", err)
-				return
-			}
-			output.PrintSuccess("All related templates for '%s' generated successfully!", name)
+		} else {
+			output.PrintInfo("Generating resource skeleton for %s", name)
+		}
+
+		if err := handlers.Generate(opts); err != nil {
+			output.PrintError("Failed to generate templates: %v", err)
 			return
 		}
 
-		output.PrintInfo("Generating skeleton related templates for %s", name)
-		if err := handlers.CreateAllRelatedSkeleton(name); err != nil {
-			output.PrintError("Failed to generate skeleton related templates: %v", err)
-			return
-		}
-		output.PrintSuccess("Skeleton related templates for '%s' generated successfully!", name)
+		output.PrintSuccess("Templates for '%s' generated successfully!", name)
 	},
 }
 

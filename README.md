@@ -21,8 +21,9 @@ WENT, Go ve Cobra ile yazilmis bir proje scaffold aracidir. Yeni bir backend pro
   - `gen:controller [name]`
   - `gen:migration [name]`
   - `gen:resource [name]`
-  - Tum `gen:*` komutlarinda varsayilan davranis: iliskili dosyalari skeleton olarak uretmek
-  - Tum `gen:*` komutlarinda `-a/--all`: iliskili dosyalari full (dolu) template ile uretmek
+  - `gen:request [name]`
+  - Tum `gen:*` komutlarinda varsayilan davranis: sadece ilgili artifact'i skeleton olarak uretmek
+  - Tum `gen:*` komutlarinda `-a/--all`: tum iliskili dosyalari full (dolu) template ile uretmek
 - Dahili migration runner (harici araç gerekmez):
   - `migrate` — bekleyen migration'ları uygular
   - `migrate:rollback` — son N migration'ı geri alır
@@ -57,25 +58,30 @@ go build -o build/went .
 
 # Versiyon
 ./build/went version
+./build/went version --beta
 
 # Guncelleme
 ./build/went update
+./build/went update --beta
+./build/went update -b
 
 # Yeni proje olustur
 ./build/went create my-app
 
 # Generator komutlari (proje dizini icerisinde calistirilmali)
 ./build/went run                        # Run project with hot reload
-./build/went gen:model User             # skeleton related set
+./build/went gen:model User             # skeleton model only
 ./build/went gen:model User -a          # full related set
-./build/went gen:controller User        # skeleton related set
+./build/went gen:controller User        # skeleton controller only
 ./build/went gen:controller User -a     # full related set
-./build/went gen:router User            # skeleton related set
+./build/went gen:router User            # skeleton router only
 ./build/went gen:router User -a         # full related set
-./build/went gen:resource User          # skeleton related set
+./build/went gen:resource User          # skeleton resource only
 ./build/went gen:resource User -a       # full related set
-./build/went gen:migration User         # skeleton related set
+./build/went gen:migration User         # skeleton migration only
 ./build/went gen:migration User -a      # full related set
+./build/went gen:request User           # skeleton request only
+./build/went gen:request User -a        # full related set
 
 # Migration runner komutlari (proje dizini icerisinde calistirilmali)
 ./build/went migrate                     # bekleyen tum up dosyalarini siraya gore uygular
@@ -86,7 +92,9 @@ go build -o build/went .
 
 ## Release Pipeline
 
-GitHub Actions release workflow'u `.github/workflows/release.yml` icerisinde tanimlidir. `main` branch'ine push geldiginde pipeline otomatik olarak yeni bir `v1.0526.<number>` tag'i uretir ve ayni workflow calismasi icinde build + GitHub Release yayinlar. Tag push edildiginde de ayni release akisi calisir:
+GitHub Actions release workflow'u `.github/workflows/release.yml` icerisinde tanimlidir. `main` branch'ine push geldiginde pipeline otomatik olarak yeni bir `v1.0526.<number>` tag'i uretir ve ayni workflow calismasi icinde build + GitHub Release yayinlar. Tag push edildiginde de ayni release akisi calisir.
+
+Bu iskelette stable/LTS sürümler varsayılan update kanalıdır; beta sürümler `--beta` veya `-b` bayrağıyla seçilir. Beta release'ler GitHub üzerinde prerelease olarak işaretlenecek ve stable akışa karışmayacak şekilde ele alınır.
 
 - Windows: `went-windows-amd64-v.1.0526.1.exe`
 - Linux: `went-linux-amd64-v.1.0526.1`, `went-linux-arm64-v.1.0526.1`
@@ -118,7 +126,9 @@ Invoke-WebRequest https://raw.githubusercontent.com/went-project/went/main/insta
 ./install.ps1
 ```
 
-Varsayilan olarak en son release indirilir. Belirli bir tag kurmak istersen `WENT_VERSION=v1.0526.1 ./install.sh` ya da PowerShell tarafinda `$env:WENT_VERSION='v1.0526.1'; ./install.ps1` kullanabilirsin.
+Varsayilan olarak en son stable release indirilir. Belirli bir tag kurmak istersen `WENT_VERSION=v1.0526.1 ./install.sh` ya da PowerShell tarafinda `$env:WENT_VERSION='v1.0526.1'; ./install.ps1` kullanabilirsin.
+
+Beta kanaldan en son prerelease sürümü yüklemek için `WENT_CHANNEL=beta ./install.sh` veya PowerShell tarafında `$env:WENT_CHANNEL='beta'; ./install.ps1` kullanabilirsin.
 
 Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `went --help` ile dogrulayabilirsin.
 
@@ -135,13 +145,13 @@ Kurulum sonunda binary kullanici PATH'ine kalici olarak eklenir ve terminalde `w
 
 | Flag | Kisaltma | Aciklama |
 |---|---|---|
-| `--migration` | `-m` | Geriye donuk uyumluluk icin korunmustur (skeleton related mode zaten migration olusturur) |
+| `--migration` | `-m` | Model-only üretimde migration dosyalarını da oluşturmak için kullanılır. Full (`--all`) modda etkisizdir. |
 | `--all` | `-a` | Tum iliskili dosyalari full template icerigiyle uretir |
 
 ## Generation Modlari
 
-- Varsayilan (`gen:* <Name>`): model, migration, request, controller, router, resource dosyalarini skeleton (bos/iskelet) olarak uretir.
-- Full (`gen:* <Name> --all`): ayni iliskili dosyalari full template icerigiyle uretir.
+- Varsayilan (`gen:* <Name>`): sadece ilgili artifact dosyasini skeleton (bos/iskelet) olarak uretir.
+- Full (`gen:* <Name> --all`): ayni komutun full related setini uretir; tum gen komutlarinda `--all` ile full scaffold seti calisir.
 
 ## Create Ile Uretilenler
 

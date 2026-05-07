@@ -5,7 +5,8 @@ on:
     branches:
       - main
     tags:
-      - 'v2.*.*'
+      - 'v*.*.*'
+      - 'v*.*.*-beta.*'
 
 permissions:
   contents: write
@@ -55,13 +56,13 @@ jobs:
           git tag "${{ steps.version.outputs.version_tag }}"
           git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "${{ steps.version.outputs.version_tag }}"
 
-  build:
-    name: Build ${{ matrix.name }}
+  build_branch:
+    name: Build branch ${{ matrix.name }}
     runs-on: ${{ matrix.runs_on }}
     needs: [version]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main'
     env:
-      RELEASE_VERSION: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.version_tag || github.ref_name }}
+      RELEASE_VERSION: ${{ needs.version.outputs.version_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -126,13 +127,83 @@ jobs:
           path: dist/${{ steps.build.outputs.artifact_name }}
           if-no-files-found: error
 
-  release:
+  build_tag:
+    name: Build tag ${{ matrix.name }}
+    runs-on: ${{ matrix.runs_on }}
+    if: startsWith(github.ref, 'refs/tags/')
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            runs_on: windows-latest
+            goos: windows
+            goarch: amd64
+            artifact_prefix: went-windows-amd64
+          - name: linux
+            runs_on: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            artifact_prefix: went-linux-amd64
+          - name: linux-arm64
+            runs_on: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            artifact_prefix: went-linux-arm64
+          - name: macos
+            runs_on: macos-latest
+            goos: darwin
+            goarch: amd64
+            artifact_prefix: went-darwin-amd64
+          - name: macos-arm64
+            runs_on: macos-latest
+            goos: darwin
+            goarch: arm64
+            artifact_prefix: went-darwin-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        id: build
+        shell: bash
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          mkdir -p dist
+          version="${RELEASE_VERSION#v}"
+          artifact_name="${{ matrix.artifact_prefix }}-v.${version}"
+          if [ "$GOOS" = "windows" ]; then
+            artifact_name="${artifact_name}.exe"
+          fi
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          go build -trimpath -ldflags="-s -w -X went/internal/utils.CurrentVersion=${RELEASE_VERSION}" -o "dist/$artifact_name" .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.artifact_name }}
+          path: dist/${{ steps.build.outputs.artifact_name }}
+          if-no-files-found: error
+
+  release_branch:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
-    needs: [version, build]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    needs: [version, build_branch]
+    if: github.ref == 'refs/heads/main'
     env:
-      RELEASE_VERSION: ${{ github.ref == 'refs/heads/main' && needs.version.outputs.version_tag || github.ref_name }}
+      RELEASE_VERSION: ${{ needs.version.outputs.version_tag }}
 
     steps:
       - name: Checkout repository
@@ -171,3 +242,51 @@ jobs:
           name: ${{ env.RELEASE_VERSION }}
           body_path: CHANGELOG.md
           files: dist/*
+          prerelease: ${{ contains(env.RELEASE_VERSION, '-beta') }}
+
+  release_tag:
+    name: Publish GitHub Release from tag
+    runs-on: ubuntu-latest
+    needs: [build_tag]
+    if: startsWith(github.ref, 'refs/tags/')
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          tags: true
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Install git-cliff
+        run: cargo install git-cliff --locked
+
+      - name: Generate changelog
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+        run: |
+          git fetch --prune --unshallow || true
+          git cliff --config .gitcliff.toml --output CHANGELOG.md --tag "${RELEASE_VERSION}"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: ${{ env.RELEASE_VERSION }}
+          body_path: CHANGELOG.md
+          files: dist/*
+          prerelease: ${{ contains(env.RELEASE_VERSION, '-beta') }}

@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var GenerateRouter = &cobra.Command{
-	Use:   "gen:router [name]",
-	Short: "Generate router",
-	Long:  "Generates a skeleton router by default. Use --all to generate all related templates in full form.",
+var GenerateRequest = &cobra.Command{
+	Use:   "gen:request [name]",
+	Short: "Generate request payloads",
+	Long:  "Generates a skeleton request payload file by default. Use --all to generate all related templates in full form.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
@@ -18,14 +18,14 @@ var GenerateRouter = &cobra.Command{
 
 		opts := handlers.GenerationOptions{
 			Name: name,
-			Type: handlers.GeneratorTypeRouter,
+			Type: handlers.GeneratorTypeRequest,
 			All:  withAll,
 		}
 
 		if withAll {
 			output.PrintInfo("Generating full related templates for %s", name)
 		} else {
-			output.PrintInfo("Generating router skeleton for %s", name)
+			output.PrintInfo("Generating request skeleton for %s", name)
 		}
 
 		if err := handlers.Generate(opts); err != nil {
@@ -38,5 +38,5 @@ var GenerateRouter = &cobra.Command{
 }
 
 func init() {
-	GenerateRouter.Flags().BoolP("all", "a", false, "Generate all related templates in full form")
+	GenerateRequest.Flags().BoolP("all", "a", false, "Generate all related templates in full form")
 }

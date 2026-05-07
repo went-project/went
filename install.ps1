@@ -1,6 +1,11 @@
 param(
-    [string]$Version = $env:WENT_VERSION
+    [string]$Version = $env:WENT_VERSION,
+    [string]$Channel = $env:WENT_CHANNEL
 )
+
+if (-not $Channel) {
+    $Channel = 'stable'
+}
 
 $ErrorActionPreference = 'Stop'
 $repo = if ($env:WENT_REPOSITORY) { $env:WENT_REPOSITORY } else { 'went-project/went' }
@@ -32,16 +37,32 @@ function Download-File {
 }
 
 function Get-LatestTag {
-    $apiUrl = "https://api.github.com/repos/$repo/releases/latest"
-    try {
-        $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
-        if (-not $release.tag_name) {
-            Throw-InstallError 'Unable to determine the latest release tag.'
+    if ($Channel -eq 'beta') {
+        $apiUrl = "https://api.github.com/repos/$repo/releases?per_page=100"
+        try {
+            $releases = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
+            $betaRelease = $releases | Where-Object { $_.prerelease -and $_.tag_name -match '^v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$' } | Select-Object -First 1
+            if (-not $betaRelease) {
+                Throw-InstallError 'Unable to determine the latest beta release tag.'
+            }
+            return [string]$betaRelease.tag_name
         }
-        return [string]$release.tag_name
+        catch {
+            Throw-InstallError "Failed to read latest beta release tag from GitHub."
+        }
     }
-    catch {
-        Throw-InstallError "Failed to read latest release tag from GitHub."
+    else {
+        $apiUrl = "https://api.github.com/repos/$repo/releases/latest"
+        try {
+            $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
+            if (-not $release.tag_name) {
+                Throw-InstallError 'Unable to determine the latest release tag.'
+            }
+            return [string]$release.tag_name
+        }
+        catch {
+            Throw-InstallError "Failed to read latest release tag from GitHub."
+        }
     }
 }
 

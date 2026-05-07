@@ -9,14 +9,6 @@ import (
 )
 
 func CreateController(name string, full bool) error {
-	if err := CreateControllerHelper("."); err != nil {
-		return err
-	}
-
-	if err := CreateRequest(name, full); err != nil {
-		return err
-	}
-
 	var (
 		templateContent string
 		err             error

@@ -10,9 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var versionBetaFlag bool
+
 func printVersionInfo() {
+	channel := utils.ParseChannelFlag(versionBetaFlag)
 	output.PrintHeader("Version Info")
 	output.PrintLine("Binary", utils.GetCurrentVersion())
+	output.PrintLine("Channel", string(channel))
 
 	if _, err := os.Stat("wentconfig.json"); err == nil {
 		config, err := utils.ReadConfigFile()
@@ -29,7 +33,7 @@ func printVersionInfo() {
 		}
 	}
 
-	result, err := handlers.CheckLatestVersion()
+	result, err := handlers.CheckLatestVersion(handlers.UpdateOptions{Channel: channel})
 	if err != nil {
 		output.PrintWarning("Unable to check latest release: %v", err)
 		return
@@ -37,7 +41,11 @@ func printVersionInfo() {
 
 	output.PrintLine("Latest", result.Latest)
 	if result.UpdateAvailable {
-		output.PrintSuccess("Update available — run 'went update' to install the latest version.")
+		if channel == utils.ChannelBeta {
+			output.PrintSuccess("Beta update available — run 'went update --beta' to install the latest beta release.")
+		} else {
+			output.PrintSuccess("Update available — run 'went update' to install the latest version.")
+		}
 	} else {
 		output.PrintInfo("No updates available.")
 	}
@@ -49,4 +57,8 @@ var Version = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		printVersionInfo()
 	},
+}
+
+func init() {
+	Version.Flags().BoolVarP(&versionBetaFlag, "beta", "b", false, "Check for the latest beta release instead of stable")
 }

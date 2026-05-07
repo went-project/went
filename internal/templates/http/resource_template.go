@@ -114,7 +114,6 @@ type ` + name + `Resource struct {}
 // ` + name + `Collection is a skeleton collection generated without --all.
 type ` + name + `Collection struct {
 	Data []` + name + `Resource ` + "`json:\"data\"`" + `
-	Meta PaginationMeta     ` + "`json:\"meta\"`" + `
 }
 
 // ` + name + `Query is a skeleton query builder generated without --all.

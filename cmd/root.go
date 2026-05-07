@@ -59,6 +59,7 @@ func init() {
 	Root.AddCommand(GenerateController)
 	Root.AddCommand(GenerateMigration)
 	Root.AddCommand(GenerateResource)
+	Root.AddCommand(GenerateRequest)
 	Root.AddCommand(Run)
 	Root.AddCommand(Migrate)
 	Root.AddCommand(MigrateFresh)

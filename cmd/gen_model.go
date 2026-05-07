@@ -22,26 +22,27 @@ Flags:
 		withMigration, _ := cmd.Flags().GetBool("migration")
 		withAll, _ := cmd.Flags().GetBool("all")
 
+		opts := handlers.GenerationOptions{
+			Name:             name,
+			Type:             handlers.GeneratorTypeModel,
+			All:              withAll,
+			IncludeMigration: withMigration,
+		}
+
 		if withAll {
 			output.PrintInfo("Generating full related templates for %s", name)
-			if err := handlers.CreateAllRelated(name); err != nil {
-				output.PrintError("Failed to generate related templates: %v", err)
-				return
-			}
-			output.PrintSuccess("All related templates for '%s' generated successfully!", name)
+		} else if withMigration {
+			output.PrintInfo("Generating model and migration skeletons for %s", name)
+		} else {
+			output.PrintInfo("Generating model skeleton for %s", name)
+		}
+
+		if err := handlers.Generate(opts); err != nil {
+			output.PrintError("Failed to generate templates: %v", err)
 			return
 		}
 
-		if withMigration {
-			output.PrintInfo("Note: --migration is implicit in skeleton related generation mode.")
-		}
-
-		output.PrintInfo("Generating skeleton related templates for %s", name)
-		if err := handlers.CreateAllRelatedSkeleton(name); err != nil {
-			output.PrintError("Failed to generate skeleton related templates: %v", err)
-			return
-		}
-		output.PrintSuccess("Skeleton related templates for '%s' generated successfully!", name)
+		output.PrintSuccess("Templates for '%s' generated successfully!", name)
 	},
 }
 

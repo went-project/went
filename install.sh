@@ -4,6 +4,7 @@ set -eu
 
 repo="${WENT_REPOSITORY:-went-project/went}"
 version_input="${WENT_VERSION:-${1:-}}"
+channel="${WENT_CHANNEL:-stable}"
 install_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
 binary_name="went"
 temp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t went-install)"
@@ -35,12 +36,22 @@ download_file() {
 }
 
 fetch_latest_tag() {
-  api_url="https://api.github.com/repos/$repo/releases/latest"
-  response_file="$temp_dir/latest-release.json"
+  if [ "$channel" = "beta" ]; then
+    api_url="https://api.github.com/repos/$repo/releases?per_page=100"
+    response_file="$temp_dir/latest-release.json"
 
-  download_file "$api_url" "$response_file"
+    download_file "$api_url" "$response_file"
 
-  latest_tag="$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$response_file" | head -n 1)"
+    latest_tag="$(grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"[^"]+"' "$response_file" | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$' | head -n 1)"
+  else
+    api_url="https://api.github.com/repos/$repo/releases/latest"
+    response_file="$temp_dir/latest-release.json"
+
+    download_file "$api_url" "$response_file"
+
+    latest_tag="$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^\"]*\)".*/\1/p' "$response_file" | head -n 1)"
+  fi
+
   [ -n "$latest_tag" ] || fail "unable to determine the latest release tag"
   printf '%s' "$latest_tag"
 }

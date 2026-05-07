@@ -17,10 +17,19 @@ import (
 	"went/internal/utils"
 )
 
-const (
-	latestReleaseURL  = "https://api.github.com/repos/went-project/went/releases/latest"
-	installScriptBase = "https://raw.githubusercontent.com/went-project/went/main"
+var (
+	latestReleaseURL = "https://api.github.com/repos/went-project/went/releases/latest"
+	releasesURL      = "https://api.github.com/repos/went-project/went/releases?per_page=100"
+	httpClient       = &http.Client{Timeout: 10 * time.Second}
 )
+
+const installScriptBase = "https://raw.githubusercontent.com/went-project/went/main"
+
+type UpdateOptions struct {
+	Channel        utils.Channel
+	Force          bool
+	CurrentVersion string
+}
 
 type VersionCheckResult struct {
 	Current         string
@@ -28,15 +37,17 @@ type VersionCheckResult struct {
 	UpdateAvailable bool
 }
 
-func getLatestReleaseTag(ctx context.Context) (string, error) {
+func getLatestStableReleaseTag(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, latestReleaseURL, nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("User-Agent", "went-update-checker")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -60,16 +71,74 @@ func getLatestReleaseTag(ctx context.Context) (string, error) {
 	return strings.TrimSpace(payload.TagName), nil
 }
 
-func CheckLatestVersion() (*VersionCheckResult, error) {
+func getLatestBetaReleaseTag(ctx context.Context) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releasesURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "went-update-checker")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch beta releases: %s", resp.Status)
+	}
+
+	var releases []struct {
+		TagName    string `json:"tag_name"`
+		Prerelease bool   `json:"prerelease"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return "", err
+	}
+
+	var bestTag string
+	for _, release := range releases {
+		tag := strings.TrimSpace(release.TagName)
+		if tag == "" || !release.Prerelease || !strings.Contains(tag, "-beta") {
+			continue
+		}
+
+		if bestTag == "" || utils.CompareVersions(bestTag, tag) < 0 {
+			bestTag = tag
+		}
+	}
+
+	if bestTag == "" {
+		return "", errors.New("no beta release found")
+	}
+
+	return bestTag, nil
+}
+
+func getLatestReleaseTag(ctx context.Context, opts UpdateOptions) (string, error) {
+	if opts.Channel == utils.ChannelBeta {
+		return getLatestBetaReleaseTag(ctx)
+	}
+	return getLatestStableReleaseTag(ctx)
+}
+
+func CheckLatestVersion(opts UpdateOptions) (*VersionCheckResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	latest, err := getLatestReleaseTag(ctx)
+	latest, err := getLatestReleaseTag(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	current := utils.GetCurrentVersion()
+	current := opts.CurrentVersion
+	if current == "" {
+		current = utils.GetCurrentVersion()
+	}
+
 	compare := utils.CompareVersions(current, latest)
 
 	return &VersionCheckResult{
@@ -80,7 +149,7 @@ func CheckLatestVersion() (*VersionCheckResult, error) {
 }
 
 func PrintCreateVersionWarning() {
-	result, err := CheckLatestVersion()
+	result, err := CheckLatestVersion(UpdateOptions{Channel: utils.ChannelStable})
 	if err != nil {
 		output.PrintWarning("Unable to check for the latest version: %v", err)
 		return
@@ -91,8 +160,12 @@ func PrintCreateVersionWarning() {
 	}
 }
 
-func UpdateWent() error {
-	result, err := CheckLatestVersion()
+func UpdateWent(opts UpdateOptions) error {
+	if opts.Channel == "" {
+		opts.Channel = utils.ChannelStable
+	}
+
+	result, err := CheckLatestVersion(opts)
 	if err != nil {
 		if isNetworkError(err) {
 			return fmt.Errorf("Update failed: network is unavailable or GitHub cannot be reached: %w", err)
@@ -100,12 +173,22 @@ func UpdateWent() error {
 		return fmt.Errorf("Update check failed: %w", err)
 	}
 
-	if !result.UpdateAvailable {
+	if !result.UpdateAvailable && !opts.Force {
 		output.PrintSuccess("Went is already up to date. Current version: %s", result.Current)
 		return nil
 	}
 
-	output.PrintInfo("A new version is available: %s (currently %s). Starting update...", result.Latest, result.Current)
+	channelLabel := string(opts.Channel)
+	if channelLabel == "" {
+		channelLabel = string(utils.ChannelStable)
+	}
+
+	if !result.UpdateAvailable && opts.Force {
+		output.PrintInfo("No newer version found, but force install requested for %s channel: %s.", channelLabel, result.Latest)
+	} else {
+		output.PrintInfo("A new version is available on %s channel: %s (currently %s). Starting update...", channelLabel, result.Latest, result.Current)
+	}
+
 	cmdName, args, err := installCommand()
 	if err != nil {
 		return err
@@ -114,6 +197,8 @@ func UpdateWent() error {
 	cmd := exec.Command(cmdName, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = mergeEnv(os.Environ(), "WENT_VERSION", result.Latest)
+	cmd.Env = mergeEnv(cmd.Env, "WENT_CHANNEL", channelLabel)
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("install script failed: %w", err)
@@ -121,6 +206,18 @@ func UpdateWent() error {
 
 	output.PrintSuccess("Update completed successfully.")
 	return nil
+}
+
+func mergeEnv(env []string, key, value string) []string {
+	prefix := key + "="
+	filtered := make([]string, 0, len(env)+1)
+	for _, entry := range env {
+		if !strings.HasPrefix(entry, prefix) {
+			filtered = append(filtered, entry)
+		}
+	}
+	filtered = append(filtered, fmt.Sprintf("%s=%s", key, value))
+	return filtered
 }
 
 func installCommand() (string, []string, error) {
