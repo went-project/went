@@ -34,6 +34,17 @@ func CreateResource(name string, full bool) error {
 				return err
 			}
 		}
+
+		baseResourcePath := filepath.Join("http", "resources", "base_resource.go")
+		if _, err := os.Stat(baseResourcePath); os.IsNotExist(err) {
+			baseContent, err := tmplHTTP.BaseResourceTemplateFromConfig()
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(baseResourcePath, []byte(baseContent), 0644); err != nil {
+				return err
+			}
+		}
 	}
 
 	fileName := strings.ToLower(name) + "_resource.go"

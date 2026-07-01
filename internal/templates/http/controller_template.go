@@ -23,13 +23,14 @@ func ControllerTemplateWithApp(name string, appName string) (string, error) {
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"` + appName + `/database/models"
 	"` + appName + `/http/requests"
 	"` + appName + `/http/resources"
+	"` + appName + `/internal/helpers"
 	"` + appName + `/internal/responses"
 
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -37,8 +38,8 @@ type ` + name + ` struct {
 	DB *gorm.DB
 }
 
-func (c *` + name + `) findByID(id uint, item *models.` + name + `) error {
-	return c.DB.First(item, id).Error
+func (c *` + name + `) findByID(id uuid.UUID, item *models.` + name + `) error {
+	return c.DB.First(item, "id = ?", id).Error
 }
 
 // GetAll` + name + ` godoc
@@ -52,16 +53,15 @@ func (c *` + name + `) findByID(id uint, item *models.` + name + `) error {
 // @Failure 500 {object} responses.ErrorBody
 // @Router /` + resourceName + ` [get]
 func (c *` + name + `) GetAll` + name + `(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.ParseInt(r.URL.Query().Get("page"), 10, 64)
-	perPage, _ := strconv.ParseInt(r.URL.Query().Get("per_page"), 10, 64)
+	page, perPage := helpers.ParsePagination(r)
 
-	collection, err := resources.New` + name + `Query(c.DB).Paginate(page, perPage)
+	items, total, err := helpers.Paginate[models.` + name + `](c.DB, page, perPage)
 	if err != nil {
 		responses.JSONError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	render.JSON(w, r, collection)
+	render.JSON(w, r, resources.New` + name + `Collection(items, total, page, perPage))
 }
 
 // Get` + name + `ByID godoc
@@ -69,21 +69,21 @@ func (c *` + name + `) GetAll` + name + `(w http.ResponseWriter, r *http.Request
 // @Description Get a single ` + name + ` record by ID
 // @Tags ` + name + `
 // @Produce json
-// @Param id path int true "` + name + ` ID"
+// @Param id path string true "` + name + ` ID (UUID)"
 // @Success 200 {object} resources.` + name + `Resource
 // @Failure 400 {object} responses.ErrorBody
 // @Failure 404 {object} responses.ErrorBody
 // @Failure 500 {object} responses.ErrorBody
 // @Router /` + resourceName + `/{id} [get]
 func (c *` + name + `) Get` + name + `ByID(w http.ResponseWriter, r *http.Request) {
-	id, err := ParseID(r)
+	id, err := helpers.ParseID(r)
 	if err != nil {
 		responses.JSONError(w, r, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	item, err := resources.New` + name + `Query(c.DB).Find(id)
-	if err != nil {
+	var item models.` + name + `
+	if err := c.DB.First(&item, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			responses.JSONError(w, r, http.StatusNotFound, "not found")
 			return
@@ -92,7 +92,7 @@ func (c *` + name + `) Get` + name + `ByID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	render.JSON(w, r, item)
+	render.JSON(w, r, resources.New` + name + `Resource(item))
 }
 
 // Create` + name + ` godoc
@@ -114,12 +114,7 @@ func (c *` + name + `) Create` + name + `(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	item := models.` + name + `{
-		Name:  payload.Name,
-		Email: payload.Email,
-	}
-
-	err = c.DB.Create(&item).Error
+	item, err := helpers.CreateFromPayload[models.` + name + `](c.DB, &payload)
 	if err != nil {
 		responses.JSONError(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -135,7 +130,7 @@ func (c *` + name + `) Create` + name + `(w http.ResponseWriter, r *http.Request
 // @Tags ` + name + `
 // @Accept json
 // @Produce json
-// @Param id path int true "` + name + ` ID"
+// @Param id path string true "` + name + ` ID (UUID)"
 // @Param payload body requests.` + name + `UpdatePayload true "` + name + ` update payload"
 // @Success 200 {object} resources.` + name + `Resource
 // @Failure 400 {object} responses.ErrorBody
@@ -143,7 +138,7 @@ func (c *` + name + `) Create` + name + `(w http.ResponseWriter, r *http.Request
 // @Failure 500 {object} responses.ErrorBody
 // @Router /` + resourceName + `/{id} [put]
 func (c *` + name + `) Update` + name + `(w http.ResponseWriter, r *http.Request) {
-	id, err := ParseID(r)
+	id, err := helpers.ParseID(r)
 	if err != nil {
 		responses.JSONError(w, r, http.StatusBadRequest, "invalid id")
 		return
@@ -167,13 +162,7 @@ func (c *` + name + `) Update` + name + `(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	updates := map[string]interface{}{}
-	if payload.Name != nil {
-		updates["name"] = *payload.Name
-	}
-	if payload.Email != nil {
-		updates["email"] = *payload.Email
-	}
+	updates := helpers.BuildUpdateMap(&payload)
 	if len(updates) == 0 {
 		responses.JSONError(w, r, http.StatusBadRequest, "no fields to update")
 		return
@@ -198,19 +187,19 @@ func (c *` + name + `) Update` + name + `(w http.ResponseWriter, r *http.Request
 // @Summary Delete a ` + name + `
 // @Description Delete an existing ` + name + ` record by ID
 // @Tags ` + name + `
-// @Param id path int true "` + name + ` ID"
+// @Param id path string true "` + name + ` ID (UUID)"
 // @Success 204
 // @Failure 400 {object} responses.ErrorBody
 // @Failure 500 {object} responses.ErrorBody
 // @Router /` + resourceName + `/{id} [delete]
 func (c *` + name + `) Delete` + name + `(w http.ResponseWriter, r *http.Request) {
-	id, err := ParseID(r)
+	id, err := helpers.ParseID(r)
 	if err != nil {
 		responses.JSONError(w, r, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	err = c.DB.Delete(&models.` + name + `{}, id).Error
+	err = c.DB.Delete(&models.` + name + `{}, "id = ?", id).Error
 	if err != nil {
 		responses.JSONError(w, r, http.StatusInternalServerError, err.Error())
 		return

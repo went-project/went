@@ -28,6 +28,12 @@ func CreateController(name string, full bool) error {
 		return err
 	}
 
+	if full {
+		if err := CreateHelpers("."); err != nil {
+			return err
+		}
+	}
+
 	fileName := strings.ToLower(name) + "_controller.go"
 	filePath := filepath.Join("http", "controllers", fileName)
 	return os.WriteFile(filePath, []byte(templateContent), 0644)

@@ -28,6 +28,15 @@ func CreateRequest(name string, full bool) error {
 		return err
 	}
 
+	if full {
+		validatorPath := filepath.Join("http", "requests", "validator.go")
+		if _, err := os.Stat(validatorPath); os.IsNotExist(err) {
+			if err := os.WriteFile(validatorPath, []byte(tmplHTTP.ValidatorTemplate()), 0644); err != nil {
+				return err
+			}
+		}
+	}
+
 	fileName := strings.ToLower(name) + "_request.go"
 	filePath := filepath.Join("http", "requests", fileName)
 	return os.WriteFile(filePath, []byte(templateContent), 0644)

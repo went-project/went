@@ -42,6 +42,7 @@ func CreateProject(req Project) error {
 		projectName,
 		projectName + "/internal",
 		projectName + "/internal/config",
+		projectName + "/internal/helpers",
 		projectName + "/internal/providers",
 		projectName + "/internal/responses",
 		projectName + "/database/models",
@@ -151,6 +152,12 @@ func CreateProject(req Project) error {
 		return err
 	}
 
+	// base model (UUID primary key)
+	err = CreateBaseModel(projectName)
+	if err != nil {
+		return err
+	}
+
 	templateContent, err = tmplDB.ModelTemplate("User")
 	if err != nil {
 		return err
@@ -158,6 +165,15 @@ func CreateProject(req Project) error {
 
 	userModelFilePath := filepath.Join(projectName, "database", "models", "user.go")
 	err = utils.CreateFileWithContent(userModelFilePath, templateContent)
+	if err != nil {
+		return err
+	}
+
+	// shared validator
+	err = utils.CreateFileWithContent(
+		filepath.Join(projectName, "http", "requests", "validator.go"),
+		tmplHTTP.ValidatorTemplate(),
+	)
 	if err != nil {
 		return err
 	}
@@ -172,7 +188,8 @@ func CreateProject(req Project) error {
 		return err
 	}
 
-	err = CreateControllerHelper(projectName)
+	// shared helpers (ParseID, Paginate, BuildUpdateMap, etc.)
+	err = CreateHelpers(projectName)
 	if err != nil {
 		return err
 	}
@@ -192,6 +209,15 @@ func CreateProject(req Project) error {
 	err = utils.CreateFileWithContent(
 		filepath.Join(projectName, "http", "resources", "pagination.go"),
 		tmplHTTP.PaginationTemplate(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// base resource (BaseResource, PaginatedResponse, GenericQuery)
+	err = utils.CreateFileWithContent(
+		filepath.Join(projectName, "http", "resources", "base_resource.go"),
+		tmplHTTP.BaseResourceTemplate(projectName),
 	)
 	if err != nil {
 		return err
